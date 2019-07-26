@@ -25,13 +25,13 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
         this.userRedPacketMapper = userRedPacketMapper;
     }
 
-    @Override
+    @Override   // 先获取红包信息，然后从中得到子红包，然后保存子红包信息，不是原子操作，所以导致超发
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
-    public int grepRedPacket(long redPacketid, long userid) {
-        RedPacket redPacket = redPacketMapper.getRedPacket(redPacketid);
-        if (redPacket != null && redPacket.getStock() > 0) {
-            redPacketMapper.decreaseRedPacket(redPacketid);
-            return createUserRedPacket(redPacketid, userid, redPacket);
+    public int grepRedPacket(long redPacketId, long userId) {
+        RedPacket redPacket = redPacketMapper.getRedPacket(redPacketId);    // 由于是先获取红包信息，所以在更新时可能导致红包超发
+        if (redPacket != null && redPacket.getStock() > 0) {    // 此时红包还是满足要求的
+            redPacketMapper.decreaseRedPacket(redPacketId); // 可能在满足需求的情况下，多个线程同时调用了此代码，导致红包超发
+            return createUserRedPacket(redPacketId, userId, redPacket); // 根据个人得到的红包，进行更新
         } else {
             return 0;
         }
@@ -42,23 +42,23 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
      * 悲观锁
      */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
-    public int grepRedPacketForUpdate(long redPacketid, long userid) {
-        RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketid);
+    public int grepRedPacketForUpdate(long redPacketId, long userId) {
+        RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketId);
         if (redPacket != null && redPacket.getStock() > 0) {
-            redPacketMapper.decreaseRedPacket(redPacketid);
-            return createUserRedPacket(redPacketid, userid, redPacket);
+            redPacketMapper.decreaseRedPacket(redPacketId);
+            return createUserRedPacket(redPacketId, userId, redPacket);
         } else {
             return 0;
         }
     }
 
-    private int createUserRedPacket(long redPacketid, long userid, RedPacket redPacket) {
+    private int createUserRedPacket(long redPacketId, long userId, RedPacket redPacket) {
         UserRedPacket userRedPacket = new UserRedPacket();
-        userRedPacket.setRedPacketId(redPacketid);
-        userRedPacket.setUserId(userid);
+        userRedPacket.setRedPacketId(redPacketId);
+        userRedPacket.setUserId(userId);
         userRedPacket.setAmount(redPacket.getUnitAmount());
         int num = redPacket.getTotal() - redPacket.getStock() + 1;  // 当前领取的是第几个红包
-        userRedPacket.setNote("The " + num + "ed read");
+        userRedPacket.setNote("The " + num + "ed red packet");
         return userRedPacketMapper.grepRedPacket(userRedPacket);
     }
 
@@ -66,12 +66,12 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
      * 乐观锁
      */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
-    public int grepRedPacketByCAS(long redPacketid, long userid) {
-        RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketid);
+    public int grepRedPacketByCAS(long redPacketId, long userId) {
+        RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketId);
         if (redPacket != null && redPacket.getStock() > 0) {
-            int count = redPacketMapper.decreaseRedPacketByCAS(redPacketid, redPacket.getVersion());
+            int count = redPacketMapper.decreaseRedPacketByCAS(redPacketId, redPacket.getVersion());
             if (count != 0) {//成功
-                return createUserRedPacket(redPacketid, userid, redPacket);
+                return createUserRedPacket(redPacketId, userId, redPacket);
             } else {//失败
                 return 0;
             }
@@ -84,18 +84,18 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
      * 乐观锁
      */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
-    public int grepRedPacketByCASTime(long redPacketid, long userid) {
+    public int grepRedPacketByCASTime(long redPacketId, long userId) {
         long start = System.currentTimeMillis();    //记录开始时间
         while (true) {
             long end = System.currentTimeMillis();
             if (end - start > 100) {
                 return 0;
             }
-            RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketid);
+            RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketId);
             if (redPacket != null && redPacket.getStock() > 0) {
-                int count = redPacketMapper.decreaseRedPacketByCAS(redPacketid, redPacket.getVersion());
+                int count = redPacketMapper.decreaseRedPacketByCAS(redPacketId, redPacket.getVersion());
                 if (count != 0) {//成功
-                    return createUserRedPacket(redPacketid, userid, redPacket);
+                    return createUserRedPacket(redPacketId, userId, redPacket);
                 } else {//失败
                     continue;
                 }
@@ -109,13 +109,13 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
      * 乐观锁
      */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
-    public int grepRedPacketByCASNum(long redPacketid, long userid) {
+    public int grepRedPacketByCASNum(long redPacketId, long userId) {
         for (int i = 0; i < 3; i++) {
-            RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketid);
+            RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketId);
             if (redPacket != null && redPacket.getStock() > 0) {
-                int count = redPacketMapper.decreaseRedPacketByCAS(redPacketid, redPacket.getVersion());
+                int count = redPacketMapper.decreaseRedPacketByCAS(redPacketId, redPacket.getVersion());
                 if (count != 0) {//成功
-                    return createUserRedPacket(redPacketid, userid, redPacket);
+                    return createUserRedPacket(redPacketId, userId, redPacket);
                 }
             } else {
                 return 0;

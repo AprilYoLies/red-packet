@@ -24,10 +24,10 @@ public class GrabRedPacketController {
     }
 
     @RequestMapping(value = "/grapRedPacket/{redPacketId}/{userId}")
-    @ResponseBody
+    @ResponseBody   // 可能导致超发的抢红包方式
     public Map<String, Object> grapRedPacket(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
         Map<String, Object> redPacket = new HashMap<>();
-        int ret = userRedPacketService.grepRedPacket(redPacketId, userId);
+        int ret = userRedPacketService.grepRedPacket(redPacketId, userId);  // 先获取红包信息，然后从中得到子红包，然后保存子红包信息，不是原子操作，所以导致超发
         boolean flag = ret > 0;
         redPacket.put("success", flag);
         redPacket.put("message", flag ? "抢红包成功" : "抢红包失败");
@@ -77,21 +77,6 @@ public class GrabRedPacketController {
         result.put("success", flag);
         result.put("message", flag ? "抢红包成功" : "抢红包失败");
         return result;
-    }
-
-    @RequestMapping(value = "/grapRedPacket30000")
-    @ResponseBody
-    public String grapRedPacket30000() throws InterruptedException {
-        System.out.println(Thread.currentThread().getName());
-        Thread.sleep(120000);
-        for (int i = 1; i <= 30000; i++) {
-            //grepRedPacket(1,i);
-            // grepRedPacketForUpdate(2,i);
-            grapRedPacketByCAS(3, i);
-            // grepRedPacketByCASTime(4,i);
-            // grepRedPacketByCASNum(5,i);
-        }
-        return "success";
     }
 
     @RequestMapping(value = "/luckyMoney/{userId}/{amount}/{total}/{unitAmount}/{stock}")

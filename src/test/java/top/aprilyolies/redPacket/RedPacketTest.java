@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 public class RedPacketTest {
     private RestTemplate template;
 
-    private final int people = 30000;
+    private final int people = 3000;
 
     private CountDownLatch latch = new CountDownLatch(people);
 

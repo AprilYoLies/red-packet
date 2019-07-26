@@ -95,4 +95,19 @@ public class RedPacket implements Serializable {
     public void setUnitAmount(Double unitAmount) {
         this.unitAmount = unitAmount;
     }
+
+    @Override
+    public String toString() {
+        return "RedPacket{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", amount=" + amount +
+                ", sendDate=" + sendDate +
+                ", total=" + total +
+                ", unitAmount=" + unitAmount +
+                ", stock=" + stock +
+                ", version=" + version +
+                ", note='" + note + '\'' +
+                '}';
+    }
 }
