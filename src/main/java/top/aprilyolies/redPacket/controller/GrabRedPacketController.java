@@ -23,9 +23,9 @@ public class GrabRedPacketController {
         this.redPacketService = redPacketService;
     }
 
-    @RequestMapping(value = "/grapRedPacket/{redPacketId}/{userId}")
+    @RequestMapping(value = "/grepRedPacket/{redPacketId}/{userId}")
     @ResponseBody   // 可能导致超发的抢红包方式
-    public Map<String, Object> grapRedPacket(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
+    public Map<String, Object> grepRedPacket(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
         Map<String, Object> redPacket = new HashMap<>();
         int ret = userRedPacketService.grepRedPacket(redPacketId, userId);  // 先获取红包信息，然后从中得到子红包，然后保存子红包信息，不是原子操作，所以导致超发
         boolean flag = ret > 0;
@@ -35,9 +35,9 @@ public class GrabRedPacketController {
     }
 
 
-    @RequestMapping(value = "/grapRedPacketForUpdate/{redPacketId}/{userId}")
+    @RequestMapping(value = "/grepRedPacketForUpdate/{redPacketId}/{userId}")
     @ResponseBody
-    public Map<String, Object> grapRedPacketForUpdate(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
+    public Map<String, Object> grepRedPacketForUpdate(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
         Map<String, Object> result = new HashMap<>();
         int ret = userRedPacketService.grepRedPacketForUpdate(redPacketId, userId);
         boolean flag = ret > 0;
@@ -46,9 +46,9 @@ public class GrabRedPacketController {
         return result;
     }
 
-    @RequestMapping(value = "/grapRedPacketByCAS/{redPacketId}/{userId}")
+    @RequestMapping(value = "/grepRedPacketByCAS/{redPacketId}/{userId}")
     @ResponseBody
-    public Map<String, Object> grapRedPacketByCAS(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
+    public Map<String, Object> grepRedPacketByCAS(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
         Map<String, Object> result = new HashMap<>();
         int ret = userRedPacketService.grepRedPacketByCAS(redPacketId, userId);
         boolean flag = ret > 0;
@@ -57,9 +57,9 @@ public class GrabRedPacketController {
         return result;
     }
 
-    @RequestMapping(value = "/grapRedPacketByCASTime/{redPacketId}/{userId}")
+    @RequestMapping(value = "/grepRedPacketByCASTime/{redPacketId}/{userId}")
     @ResponseBody
-    public Map<String, Object> grapRedPacketByCASTime(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
+    public Map<String, Object> grepRedPacketByCASTime(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
         Map<String, Object> result = new HashMap<>();
         int ret = userRedPacketService.grepRedPacketByCASTime(redPacketId, userId);
         boolean flag = ret > 0;
@@ -68,9 +68,9 @@ public class GrabRedPacketController {
         return result;
     }
 
-    @RequestMapping(value = "/grapRedPacketByCASNum/{redPacketId}/{userId}")
+    @RequestMapping(value = "/grepRedPacketByCASNum/{redPacketId}/{userId}")
     @ResponseBody
-    public Map<String, Object> grapRedPacketByCASNum(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
+    public Map<String, Object> grepRedPacketByCASNum(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
         Map<String, Object> result = new HashMap<>();
         int ret = userRedPacketService.grepRedPacketByCASNum(redPacketId, userId);
         boolean flag = ret > 0;
@@ -101,9 +101,9 @@ public class GrabRedPacketController {
     }
 
 
-    @RequestMapping(value = "/grapRedPacketByRedis/{redPacketId}/{userId}")
+    @RequestMapping(value = "/grepRedPacketByRedis/{redPacketId}/{userId}")
     @ResponseBody
-    public Map<String, Object> grapRedPacketByRedis(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
+    public Map<String, Object> grepRedPacketByRedis(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
         Map<String, Object> resultMap = new HashMap<>();
         long result = userRedPacketService.grepRedPacketByRedis(redPacketId, userId);
         boolean flag = result > 0;

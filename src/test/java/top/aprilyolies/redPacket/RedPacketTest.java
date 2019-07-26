@@ -28,7 +28,7 @@ public class RedPacketTest {
 
     @Test
     public void grepRedPacket() {
-        String url = "http://localhost:8080/user/grapRedPacket/1/1";
+        String url = "http://localhost:8080/user/grepRedPacket/1/1";
         String packet = template.getForObject(url, String.class);
         System.out.println(packet);
     }
@@ -36,14 +36,29 @@ public class RedPacketTest {
     @Test
     public void multiThreadGrepRedPacket() throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(50);
+        final String url = "http://localhost:8080/user/grepRedPacket/1/1";
         for (int i = 0; i < people; i++) {
-            executor.submit(new GrepRedPacketTask());
+            executor.submit(new GrepRedPacketTask(url));
+        }
+        latch.await();
+    }
+
+    @Test
+    public void multiThreadGrepRedPacketForUpdate() throws Exception {
+        ExecutorService executor = Executors.newFixedThreadPool(50);
+        final String url = "http://localhost:8080/user/grepRedPacketForUpdate/1/1";
+        for (int i = 0; i < people; i++) {
+            executor.submit(new GrepRedPacketTask(url));
         }
         latch.await();
     }
 
     private class GrepRedPacketTask implements Runnable {
-        private static final String url = "http://localhost:8080/user/grapRedPacket/1/1";
+        private final String url;
+
+        public GrepRedPacketTask(String url) {
+            this.url = url;
+        }
 
         @Override
         public void run() {

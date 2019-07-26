@@ -3,24 +3,24 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="top.aprilyolies.redPacket.mapper.RedPacketMapper">
-    <!--查询红包具体信息 -->
+    <!-- 查询红包具体信息 -->
     <select id="getRedPacket" parameterType="long" resultType="top.aprilyolies.redPacket.domain.RedPacket">
         select id , user_id as userId, amount, send_date as sendDate , total,
         unit_amount as unitAmount , stock, version , note from red_packet where id = #{id}
     </select>
-    <!--扣减抢红包库存 -->
+    <!-- 扣减抢红包库存 -->
     <update id="decreaseRedPacket">
         update red_packet set stock = stock - 1 where id = #{id}
     </update>
 
 
-    <!--查询红包具体信息 -->
+    <!-- 查询红包具体信息 -->
     <select id="getRedPacketForUpdate" parameterType="long" resultType="top.aprilyolies.redPacket.domain.RedPacket">
         select id , user_id as userId, amount, send_date as sendDate , total,
         unit_amount as unitAmount , stock, version , note from red_packet where id = #{id} for update
     </select>
 
-    <!--扣减抢红包库存-乐观锁CAS-->
+    <!-- 扣减抢红包库存-乐观锁CAS-->
     <update id="decreaseRedPacketByCAS">
         update red_packet set stock = stock - 1 , version = version + 1 where id = #{id} and version = #{version}
     </update>

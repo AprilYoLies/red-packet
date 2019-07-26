@@ -3,7 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="top.aprilyolies.redPacket.mapper.UserRedPacketMapper">
-    <!--插入抢红包信息 -->
+    <!-- 插入抢红包信息 -->
     <insert id="grepRedPacket" useGeneratedKeys="true" keyProperty="id"
             parameterType="top.aprilyolies.redPacket.domain.UserRedPacket">
     insert into user_red_packet (red_packet_id, user_id, amount , grab_time, note)

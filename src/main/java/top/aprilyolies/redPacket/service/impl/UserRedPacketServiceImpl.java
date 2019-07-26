@@ -32,7 +32,7 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
         if (redPacket != null && redPacket.getStock() > 0) {    // 此时红包还是满足要求的
             redPacketMapper.decreaseRedPacket(redPacketId); // 可能在满足需求的情况下，多个线程同时调用了此代码，导致红包超发
             return createUserRedPacket(redPacketId, userId, redPacket); // 根据个人得到的红包，进行更新
-        } else {
+        } else {    // 此处两个任务持有了两个 mysql 连接，所以能够进入 if 块的线程只有总的 mysql 连接数减去二
             return 0;
         }
     }
