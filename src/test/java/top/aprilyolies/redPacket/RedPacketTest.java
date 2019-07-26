@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 public class RedPacketTest {
     private RestTemplate template;
 
-    private final int people = 30000;
+    private final int people = 2500;
 
     private CountDownLatch latch = new CountDownLatch(people);
 
@@ -57,6 +57,26 @@ public class RedPacketTest {
     public void multiThreadGrepRedPacketByCAS() throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(50);
         final String url = "http://localhost:8080/user/grepRedPacketByCAS/1/1";
+        for (int i = 0; i < people; i++) {
+            executor.submit(new GrepRedPacketTask(url));
+        }
+        latch.await();
+    }
+
+    @Test
+    public void multiThreadGrepRedPacketByCASTime() throws Exception {
+        ExecutorService executor = Executors.newFixedThreadPool(50);
+        final String url = "http://localhost:8080/user/grepRedPacketByCASTime/1/1";
+        for (int i = 0; i < people; i++) {
+            executor.submit(new GrepRedPacketTask(url));
+        }
+        latch.await();
+    }
+
+    @Test
+    public void multiThreadGrepRedPacketByCASNum() throws Exception {
+        ExecutorService executor = Executors.newFixedThreadPool(50);
+        final String url = "http://localhost:8080/user/grepRedPacketByCASNum/1/1";
         for (int i = 0; i < people; i++) {
             executor.submit(new GrepRedPacketTask(url));
         }
