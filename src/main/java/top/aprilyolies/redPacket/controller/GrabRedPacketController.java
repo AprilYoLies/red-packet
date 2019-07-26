@@ -23,6 +23,13 @@ public class GrabRedPacketController {
         this.redPacketService = redPacketService;
     }
 
+    /**
+     * 存在并发问题的抢红包方式
+     *
+     * @param redPacketId 红包 id
+     * @param userId      用户 id
+     * @return 抢红包结果
+     */
     @RequestMapping(value = "/grepRedPacket/{redPacketId}/{userId}")
     @ResponseBody   // 可能导致超发的抢红包方式
     public Map<String, Object> grepRedPacket(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
@@ -34,7 +41,13 @@ public class GrabRedPacketController {
         return redPacket;
     }
 
-
+    /**
+     * 悲观锁实现的抢红包方式
+     *
+     * @param redPacketId 红包 id
+     * @param userId      用户 id
+     * @return 抢红包结果
+     */
     @RequestMapping(value = "/grepRedPacketForUpdate/{redPacketId}/{userId}")
     @ResponseBody
     public Map<String, Object> grepRedPacketForUpdate(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {
@@ -46,6 +59,13 @@ public class GrabRedPacketController {
         return result;
     }
 
+    /**
+     * 乐观锁实现抢红包方式
+     *
+     * @param redPacketId 红包 id
+     * @param userId      用户 id
+     * @return 抢红包结果
+     */
     @RequestMapping(value = "/grepRedPacketByCAS/{redPacketId}/{userId}")
     @ResponseBody
     public Map<String, Object> grepRedPacketByCAS(@PathVariable("redPacketId") long redPacketId, @PathVariable("userId") long userId) {

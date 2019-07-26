@@ -37,10 +37,10 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
         }
     }
 
-    @Override
     /**
      * 悲观锁
      */
+    @Override
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
     public int grepRedPacketForUpdate(long redPacketId, long userId) {
         RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketId);
@@ -67,7 +67,7 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
      */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
     public int grepRedPacketByCAS(long redPacketId, long userId) {
-        RedPacket redPacket = redPacketMapper.getRedPacketForUpdate(redPacketId);
+        RedPacket redPacket = redPacketMapper.getRedPacket(redPacketId);
         if (redPacket != null && redPacket.getStock() > 0) {
             int count = redPacketMapper.decreaseRedPacketByCAS(redPacketId, redPacket.getVersion());
             if (count != 0) {//成功
