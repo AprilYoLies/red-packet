@@ -1,11 +1,11 @@
 package top.aprilyolies.redPacket.service.impl;
 
-import org.springframework.stereotype.Service;
-import top.aprilyolies.redPacket.domain.UserRedPacket;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.BoundListOperations;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import top.aprilyolies.redPacket.domain.UserRedPacket;
 import top.aprilyolies.redPacket.service.IRedisRedPacketService;
 
 import javax.sql.DataSource;
@@ -35,44 +35,37 @@ public class RedisRedPacketServiceImpl implements IRedisRedPacketService {
     @Async
     public void saveUserRedPacketByRedis(Long redPacketId, Double unitAmount) {
         System.err.println("开始保存数据");
+        String listKey = PREFIX + redPacketId;
+        byte[] bListKey = listKey.getBytes();
         Long start = System.currentTimeMillis();
         // 获取列表操作对象
-        BoundListOperations ops = redisTemplate.boundListOps(PREFIX + redPacketId);
-        Long size = ops.size();
-        Long times = size % TIME_SIZE == 0 ? size / TIME_SIZE : size / TIME_SIZE + 1;
-        int count = 0;
-        List<UserRedPacket> userRedPacketList = new ArrayList<UserRedPacket>(TIME_SIZE);
-        for (int i = 0; i < times; i++) {
-            // 获取至多TIME_SIZE个抢红包信息
-            List userIdList = null;
-            if (i == 0) {
-                userIdList = ops.range(i * TIME_SIZE, (i + 1) * TIME_SIZE);
-            } else {
-                userIdList = ops.range(i * TIME_SIZE + 1, (i + 1) * TIME_SIZE);
-            }
-            userRedPacketList.clear();
-            // 保存红包信息
-            for (int j = 0; j < userIdList.size(); j++) {
-                String args = userIdList.get(j).toString();
-                String[] arr = args.split("-");
-                String userIdStr = arr[0];
-                String timeStr = arr[1];
-                Long userId = Long.parseLong(userIdStr);
-                Long time = Long.parseLong(timeStr);
-                // 生成抢红包信息
-                UserRedPacket userRedPacket = new UserRedPacket();
-                userRedPacket.setRedPacketId(redPacketId);
-                userRedPacket.setUserId(userId);
-                userRedPacket.setAmount(unitAmount);
-                userRedPacket.setGrabTime(new Timestamp(time));
-                userRedPacket.setNote("抢红包 " + redPacketId);
-                userRedPacketList.add(userRedPacket);
-            }
-            // 插入抢红包信息
-            count += executeBatch(userRedPacketList);
+        RedisConnection connection = redisTemplate.getConnectionFactory().getConnection();
+        List<byte[]> listEles = connection.lRange(bListKey, 0, connection.lLen(bListKey));
+        List<String> sListEles = new ArrayList<>(listEles.size());
+        for (int i = 0; i < listEles.size(); i++) {
+            sListEles.add(new String(listEles.get(i)));
         }
+        List<UserRedPacket> userRedPacketList = new ArrayList<>(sListEles.size());
+        for (int j = 0; j < sListEles.size(); j++) {
+            String args = sListEles.get(j);
+            String[] arr = args.split("-");
+            String userIdStr = arr[0];
+            String timeStr = arr[1];
+            Long userId = Long.parseLong(userIdStr);
+            Long time = Long.parseLong(timeStr);
+            // 生成抢红包信息
+            UserRedPacket userRedPacket = new UserRedPacket();
+            userRedPacket.setRedPacketId(redPacketId);
+            userRedPacket.setUserId(userId);
+            userRedPacket.setAmount(unitAmount);
+            userRedPacket.setGrabTime(new Timestamp(time));
+            userRedPacket.setNote("The " + redPacketId + "ed red packet.");
+            userRedPacketList.add(userRedPacket);
+        }
+        // 插入抢红包信息
+        int count = executeBatch(userRedPacketList);
         // 删除Redis列表
-        redisTemplate.delete(PREFIX + redPacketId);
+        connection.del(listKey.getBytes());
         Long end = System.currentTimeMillis();
         System.err.println("保存数据结束，耗时" + (end - start) + "毫秒，共" + count + "条记录被保存。");
     }

@@ -83,6 +83,23 @@ public class RedPacketTest {
         latch.await();
     }
 
+    @Test
+    public void testBytesToString() {
+        byte[] bytes = new byte[]{48, 49, 50};
+        String s = new String(bytes);
+        System.out.println(s);
+    }
+
+    @Test
+    public void multiThreadGrepRedPacketByRedis() throws Exception {
+        ExecutorService executor = Executors.newFixedThreadPool(50);
+        final String url = "http://localhost:8080/user/grepRedPacketByRedis/1/1";
+        for (int i = 0; i < people; i++) {
+            executor.submit(new GrepRedPacketTask(url));
+        }
+        latch.await();
+    }
+
     private class GrepRedPacketTask implements Runnable {
         private final String url;
 

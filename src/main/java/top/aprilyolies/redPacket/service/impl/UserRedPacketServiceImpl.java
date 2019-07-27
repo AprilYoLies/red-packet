@@ -14,8 +14,6 @@ import top.aprilyolies.redPacket.mapper.UserRedPacketMapper;
 import top.aprilyolies.redPacket.service.IRedisRedPacketService;
 import top.aprilyolies.redPacket.service.IUserRedPacketService;
 
-import java.util.Arrays;
-
 @Service
 public class UserRedPacketServiceImpl implements IUserRedPacketService {
 
@@ -136,12 +134,12 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
 
     // Lua脚本
     String script = "local listKey = 'red_packet_list_'..KEYS[1] \n"
-            + "local redPacket = 'red_packet_'..KEYS[2] \n"
+            + "local redPacket = 'red_packet_'..KEYS[1] \n"
             + "local stock = tonumber(redis.call('hget', redPacket, 'stock')) \n"
             + "if stock <= 0 then return 0 end \n"
             + "stock = stock -1 \n"
             + "redis.call('hset', redPacket, 'stock', tostring(stock)) \n"
-            + "redis.call('rpush', listKey, KEYS[1]) \n"
+            + "redis.call('rpush', listKey, KEYS[2]) \n"
             + "if stock == 0 then return 2 end \n"
             + "return 1 \n";
 
@@ -150,7 +148,7 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
 
     public long grepRedPacketByRedis(Long redPacketId, Long userId) {
         // 当前抢红包用户和日期信息
-        String sUId = userId + "";
+        String sUId = userId + "-" + System.currentTimeMillis();
         String sPId = redPacketId + "";
         Long result;
         // 获取底层Redis操作对象
@@ -166,9 +164,9 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
             // 返回2时为最后一个红包，此时将抢红包信息通过异步保存到数据库中
             if (result == 2) {
                 // 获取单个小红包金额
-                String unitAmountStr = Arrays.toString(jedis.hGet(("red_packet_" + redPacketId).getBytes(), "unit_amount".getBytes()));
+                byte[] bytes = jedis.hGet(("red_packet_" + redPacketId).getBytes(), "stock".getBytes());
                 // 触发保存数据库操作
-                Double unitAmount = Double.parseDouble(unitAmountStr);
+                Double unitAmount = Double.parseDouble(new String(bytes));
                 System.err.println("thread_name = " + Thread.currentThread().getName());
                 redisRedPacketService.saveUserRedPacketByRedis(redPacketId, unitAmount);
             }
