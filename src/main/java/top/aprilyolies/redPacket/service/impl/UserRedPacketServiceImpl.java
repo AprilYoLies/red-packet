@@ -38,7 +38,7 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
     }
 
     /**
-     * 悲观锁
+     * 悲观锁，通过 mysql 的悲观锁保证红包不会超发
      */
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
@@ -52,6 +52,7 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
         }
     }
 
+    // 往数据库中写入子红包数据记录
     private int createUserRedPacket(long redPacketId, long userId, RedPacket redPacket) {
         UserRedPacket userRedPacket = new UserRedPacket();
         userRedPacket.setRedPacketId(redPacketId);
@@ -63,7 +64,7 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
     }
 
     /**
-     * 乐观锁
+     * 乐观锁，大概率失败
      */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
     public int grepRedPacketByCAS(long redPacketId, long userId) {
@@ -81,7 +82,7 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
     }
 
     /**
-     * 乐观锁
+     * 乐观锁，通过限时保证成功率
      */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
     public int grepRedPacketByCASTime(long redPacketId, long userId) {
@@ -106,7 +107,7 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
     }
 
     /**
-     * 乐观锁
+     * 乐观锁，通过重试次数保证成功率
      */
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
     public int grepRedPacketByCASNum(long redPacketId, long userId) {
