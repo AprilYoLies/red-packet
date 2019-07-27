@@ -1,18 +1,20 @@
 package top.aprilyolies.redPacket.service.impl;
 
-import top.aprilyolies.redPacket.mapper.RedPacketMapper;
-import top.aprilyolies.redPacket.mapper.UserRedPacketMapper;
-import top.aprilyolies.redPacket.domain.RedPacket;
-import top.aprilyolies.redPacket.domain.UserRedPacket;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import redis.clients.jedis.Jedis;
+import top.aprilyolies.redPacket.domain.RedPacket;
+import top.aprilyolies.redPacket.domain.UserRedPacket;
+import top.aprilyolies.redPacket.mapper.RedPacketMapper;
+import top.aprilyolies.redPacket.mapper.UserRedPacketMapper;
 import top.aprilyolies.redPacket.service.IRedisRedPacketService;
 import top.aprilyolies.redPacket.service.IUserRedPacketService;
+
+import java.util.Arrays;
 
 @Service
 public class UserRedPacketServiceImpl implements IUserRedPacketService {
@@ -20,9 +22,11 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
     private RedPacketMapper redPacketMapper;
     private UserRedPacketMapper userRedPacketMapper;
 
-    UserRedPacketServiceImpl(RedPacketMapper redPacketMapper, UserRedPacketMapper userRedPacketMapper) {
+    UserRedPacketServiceImpl(RedPacketMapper redPacketMapper, UserRedPacketMapper userRedPacketMapper, RedisTemplate redisTemplate, IRedisRedPacketService redisRedPacketService) {
         this.redPacketMapper = redPacketMapper;
         this.userRedPacketMapper = userRedPacketMapper;
+        this.redisTemplate = redisTemplate;
+        this.redisRedPacketService = redisRedPacketService;
     }
 
     @Override   // 先获取红包信息，然后从中得到子红包，然后保存子红包信息，不是原子操作，所以导致超发
@@ -126,45 +130,43 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
     }
 
 
-    @Autowired
-    private RedisTemplate redisTemplate;
+    private final RedisTemplate redisTemplate;
 
-    @Autowired
-    private IRedisRedPacketService redisRedPacketService;
+    private final IRedisRedPacketService redisRedPacketService;
 
     // Lua脚本
     String script = "local listKey = 'red_packet_list_'..KEYS[1] \n"
-            + "local redPacket = 'red_packet_'..KEYS[1] \n"
+            + "local redPacket = 'red_packet_'..KEYS[2] \n"
             + "local stock = tonumber(redis.call('hget', redPacket, 'stock')) \n"
             + "if stock <= 0 then return 0 end \n"
             + "stock = stock -1 \n"
             + "redis.call('hset', redPacket, 'stock', tostring(stock)) \n"
-            + "redis.call('rpush', listKey, ARGV[1]) \n"
+            + "redis.call('rpush', listKey, KEYS[1]) \n"
             + "if stock == 0 then return 2 end \n"
             + "return 1 \n";
 
     // 在缓存LUA脚本后，使用该变量保存Redis返回的32位的SHA1编码，使用它去执行缓存的LUA脚本[加入这句话]
     String sha1 = null;
 
-    @Override
     public long grepRedPacketByRedis(Long redPacketId, Long userId) {
         // 当前抢红包用户和日期信息
-        String args = userId + "-" + System.currentTimeMillis();
-        Long result = null;
+        String sUId = userId + "";
+        String sPId = redPacketId + "";
+        Long result;
         // 获取底层Redis操作对象
-        Jedis jedis = (Jedis) redisTemplate.getConnectionFactory().getConnection().getNativeConnection();
+        RedisConnection jedis = redisTemplate.getConnectionFactory().getConnection();
         try {
             // 如果脚本没有加载过，那么进行加载，这样就会返回一个sha1编码
             if (sha1 == null) {
-                sha1 = jedis.scriptLoad(script);
+                sha1 = jedis.scriptLoad(script.getBytes());
             }
             // 执行脚本，返回结果
-            Object res = jedis.evalsha(sha1, 1, redPacketId + "", args);
+            Object res = jedis.evalSha(sha1, ReturnType.INTEGER, 2, sPId.getBytes(), sUId.getBytes());
             result = (Long) res;
             // 返回2时为最后一个红包，此时将抢红包信息通过异步保存到数据库中
             if (result == 2) {
                 // 获取单个小红包金额
-                String unitAmountStr = jedis.hget("red_packet_" + redPacketId, "unit_amount");
+                String unitAmountStr = Arrays.toString(jedis.hGet(("red_packet_" + redPacketId).getBytes(), "unit_amount".getBytes()));
                 // 触发保存数据库操作
                 Double unitAmount = Double.parseDouble(unitAmountStr);
                 System.err.println("thread_name = " + Thread.currentThread().getName());
@@ -172,7 +174,7 @@ public class UserRedPacketServiceImpl implements IUserRedPacketService {
             }
         } finally {
             // 确保jedis顺利关闭
-            if (jedis != null && jedis.isConnected()) {
+            if (jedis != null && !jedis.isClosed()) {
                 jedis.close();
             }
         }
