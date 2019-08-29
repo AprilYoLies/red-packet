@@ -22,7 +22,7 @@ CREATE TABLE `red_packet` (
 -- Records of red_packet
 -- ----------------------------
 BEGIN;
-INSERT INTO `red_packet` VALUES (1, 1, 20000.00, '2019-07-26 22:37:38', 2000, 10.00, 0, 8000, '20万元金额，2万个小红包，每个10元');
+INSERT INTO `red_packet` VALUES (1, 1, 2000.00, '2019-08-29 15:23:57', 200, 10.00, 200, 8000, '2000元金额，200个小红包，每个10元');
 COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;

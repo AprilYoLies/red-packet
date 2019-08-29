@@ -14,7 +14,7 @@
 
 说明：在测试基于 redis 的抢红包程序时，需要启动本地的 redis 服务端，同时在其中写入红包信息，指令如下。
 
-> hset red_packet_1 stock 2000
+> hset red_packet_1 stock 200
 
 ## 测试 api 说明
 
